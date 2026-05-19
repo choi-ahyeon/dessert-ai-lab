@@ -1,65 +1,120 @@
-import Image from "next/image";
+'use client'
+
+import { useEffect, useState } from 'react'
+
+interface Fruit {
+  id: string
+  name_en: string
+  category: string
+}
+
+interface PairingResult {
+  compound_score: number
+  shared_compounds: number
+  predicted_sugar: number
+  predicted_ph: number
+}
 
 export default function Home() {
+  const [fruits, setFruits] = useState<Fruit[]>([])
+  const [fruitA, setFruitA] = useState('')
+  const [fruitB, setFruitB] = useState('')
+  const [result, setResult] = useState<PairingResult | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetch('http://localhost:8000/fruits/')
+        .then(res => res.json())
+        .then(data => setFruits(data))
+  }, [])
+
+  const handlePairing = async () => {
+    if (!fruitA || !fruitB) return
+    setLoading(true)
+    const res = await fetch('http://localhost:8000/fruits/pairing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fruit_a_id: fruitA, fruit_b_id: fruitB })
+    })
+    const data = await res.json()
+    setResult(data)
+    setLoading(false)
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+      <main className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-pink-400 mb-2">🍓 Dessert AI Lab</h1>
+          <p className="text-pink-300 text-lg">과일 페어링 AI 서비스</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-lg border border-pink-100">
+          <h2 className="text-xl font-semibold text-pink-400 mb-6 text-center">🎀 과일 조합 만들기</h2>
+
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm text-pink-300 mb-1 block">과일 A</label>
+              <select
+                  className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                  value={fruitA}
+                  onChange={e => setFruitA(e.target.value)}
+              >
+                <option value="">과일을 선택하세요</option>
+                {fruits.map(f => (
+                    <option key={f.id} value={f.id}>{f.name_en}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="text-center text-pink-300 text-2xl">+</div>
+
+            <div>
+              <label className="text-sm text-pink-300 mb-1 block">과일 B</label>
+              <select
+                  className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                  value={fruitB}
+                  onChange={e => setFruitB(e.target.value)}
+              >
+                <option value="">과일을 선택하세요</option>
+                {fruits.map(f => (
+                    <option key={f.id} value={f.id}>{f.name_en}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+                onClick={handlePairing}
+                disabled={loading}
+                className="mt-4 bg-pink-400 hover:bg-pink-500 text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50"
+            >
+              {loading ? '분석 중...' : '🍰 페어링 분석하기'}
+            </button>
+          </div>
+
+          {result && (
+              <div className="mt-8 bg-pink-50 rounded-2xl p-6 border border-pink-100">
+                <h3 className="text-center text-pink-400 font-semibold mb-4">✨ 페어링 결과</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                    <p className="text-xs text-pink-300 mb-1">궁합 점수</p>
+                    <p className="text-2xl font-bold text-pink-400">{result.compound_score}점</p>
+                  </div>
+                  <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                    <p className="text-xs text-pink-300 mb-1">공유 화합물</p>
+                    <p className="text-2xl font-bold text-pink-400">{result.shared_compounds}개</p>
+                  </div>
+                  <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                    <p className="text-xs text-pink-300 mb-1">예측 당도</p>
+                    <p className="text-2xl font-bold text-pink-400">{result.predicted_sugar}g</p>
+                  </div>
+                  <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                    <p className="text-xs text-pink-300 mb-1">예측 산도</p>
+                    <p className="text-2xl font-bold text-pink-400">pH {result.predicted_ph}</p>
+                  </div>
+                </div>
+              </div>
+          )}
         </div>
       </main>
-    </div>
-  );
+  )
 }
