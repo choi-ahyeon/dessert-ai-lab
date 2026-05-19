@@ -9,6 +9,18 @@ def get_all_fruits(db: Session):
 def get_fruit_by_id(db: Session, fruit_id: str):
     return db.query(Fruit).filter(Fruit.id == fruit_id).first()
 
+def predict_mix(fruit_a: Fruit, fruit_b: Fruit):
+    predicted_sugar = None
+    predicted_ph = None
+
+    if fruit_a.sugar_per_100g and fruit_b.sugar_per_100g:
+        predicted_sugar = round((float(fruit_a.sugar_per_100g) + float(fruit_b.sugar_per_100g)) / 2, 2)
+
+    if fruit_a.ph and fruit_b.ph:
+        predicted_ph = round((float(fruit_a.ph) + float(fruit_b.ph)) / 2, 2)
+
+    return predicted_sugar, predicted_ph
+
 def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
 
     compounds_a = db.query(FruitCompound).filter(
@@ -18,7 +30,10 @@ def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
     compounds_b = db.query(FruitCompound).filter(
         FruitCompound.fruit_id == fruit_b_id
     ).all()
+    fruit_a = db.query(Fruit).filter(Fruit.id == fruit_a_id).first()
+    fruit_b = db.query(Fruit).filter(Fruit.id == fruit_b_id).first()
 
+    predicted_sugar, predicted_ph = predict_mix(fruit_a, fruit_b)
     ids_a = set(c.pubchem_id for c in compounds_a)
     ids_b = set(c.pubchem_id for c in compounds_b)
     shared = ids_a & ids_b
@@ -34,6 +49,8 @@ def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
         fruit_b_id=fruit_b_id,
         shared_compounds=len(shared),
         compound_score=score,
+        predicted_sugar=predicted_sugar,
+        predicted_ph=predicted_ph,
         created_at=datetime.now(timezone.utc)
     )
     db.add(combination)
