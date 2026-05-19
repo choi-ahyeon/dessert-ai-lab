@@ -80,7 +80,7 @@ export default function FruitMatchValidate() {
 
     const handleSave = async () => {
         if (!pairingResult || !form.result) return
-        await fetch('http://localhost:8000/validations/', {
+        await fetch('http://localhost:8000/validations/fruitmatch/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
