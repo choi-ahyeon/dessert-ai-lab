@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 interface Fruit {
   id: string
   name_en: string
+  name_ko: string | null
   category: string
 }
 
@@ -25,7 +26,12 @@ export default function Home() {
   useEffect(() => {
     fetch('http://localhost:8000/fruits/')
         .then(res => res.json())
-        .then(data => setFruits(data))
+        .then(data => {
+          const sorted = data.sort((a: Fruit, b: Fruit) =>
+              a.name_en.localeCompare(b.name_en)
+          )
+          setFruits(sorted)
+        })
   }, [])
 
   const handlePairing = async () => {
@@ -61,7 +67,9 @@ export default function Home() {
               >
                 <option value="">과일을 선택하세요</option>
                 {fruits.map(f => (
-                    <option key={f.id} value={f.id}>{f.name_en}</option>
+                    <option key={f.id} value={f.id}>
+                      {f.name_ko ? `${f.name_ko} (${f.name_en})` : f.name_en}
+                    </option>
                 ))}
               </select>
             </div>
@@ -77,7 +85,9 @@ export default function Home() {
               >
                 <option value="">과일을 선택하세요</option>
                 {fruits.map(f => (
-                    <option key={f.id} value={f.id}>{f.name_en}</option>
+                    <option key={f.id} value={f.id}>
+                      {f.name_ko ? `${f.name_ko} (${f.name_en})` : f.name_en}
+                    </option>
                 ))}
               </select>
             </div>
@@ -94,7 +104,8 @@ export default function Home() {
           {result && (
               <div className="mt-8 bg-pink-50 rounded-2xl p-6 border border-pink-100">
                 <h3 className="text-center text-pink-400 font-semibold mb-4">✨ 페어링 결과</h3>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
                     <p className="text-xs text-pink-300 mb-1">궁합 점수</p>
                     <p className="text-2xl font-bold text-pink-400">{result.compound_score}점</p>
@@ -105,13 +116,45 @@ export default function Home() {
                   </div>
                   <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
                     <p className="text-xs text-pink-300 mb-1">예측 당도</p>
-                    <p className="text-2xl font-bold text-pink-400">{result.predicted_sugar}g</p>
+                    <p className="text-2xl font-bold text-pink-400">
+                      {result.predicted_sugar ? `${result.predicted_sugar}g` : '-'}
+                    </p>
                   </div>
                   <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
                     <p className="text-xs text-pink-300 mb-1">예측 산도</p>
-                    <p className="text-2xl font-bold text-pink-400">pH {result.predicted_ph}</p>
+                    <p className="text-2xl font-bold text-pink-400">
+                      {result.predicted_ph ? `pH ${result.predicted_ph}` : '-'}
+                    </p>
                   </div>
                 </div>
+
+                {result.predicted_sweetness && (
+                    <div className="bg-white rounded-2xl p-4 border border-pink-100 mb-4">
+                      <p className="text-sm text-pink-400 font-semibold mb-3">맛 프로파일 (1~10)</p>
+                      <div className="flex flex-col gap-2">
+                        {[
+                          { label: '단맛', val: result.predicted_sweetness },
+                          { label: '산미', val: result.predicted_acidity },
+                          { label: '쓴맛', val: result.predicted_bitterness },
+                          { label: '크리미함', val: result.predicted_creaminess },
+                          { label: '과즙감', val: result.predicted_juiciness },
+                          { label: '풍미', val: result.predicted_richness },
+                          { label: '상큼함', val: result.predicted_freshness },
+                        ].map(item => (
+                            <div key={item.label} className="flex items-center gap-3">
+                              <span className="text-xs text-pink-300 w-16">{item.label}</span>
+                              <div className="flex-1 bg-pink-50 rounded-full h-2">
+                                <div
+                                    className="bg-pink-400 h-2 rounded-full transition-all"
+                                    style={{ width: `${((item.val || 0) / 10) * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-pink-400 w-6 text-right">{item.val}</span>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                )}
               </div>
           )}
         </div>
