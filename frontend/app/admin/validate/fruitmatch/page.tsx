@@ -15,22 +15,48 @@ interface PairingResult {
     shared_compounds: number
     predicted_sugar: number
     predicted_ph: number
-    predicted_sweetness: number
-    predicted_acidity: number
-    predicted_bitterness: number
-    predicted_creaminess: number
-    predicted_juiciness: number
-    predicted_richness: number
-    predicted_freshness: number
 }
 
-export default function Home() {
+interface ValidationForm {
+    tester_name: string
+    sweetness: number
+    sourness: number
+    bitterness: number
+    saltiness: number
+    umami: number
+    balance_score: number
+    result: string
+    memo: string
+}
+
+const defaultForm: ValidationForm = {
+    tester_name: '',
+    sweetness: 3,
+    sourness: 3,
+    bitterness: 3,
+    saltiness: 3,
+    umami: 3,
+    balance_score: 3,
+    result: '',
+    memo: ''
+}
+
+const flavorItems = [
+    { key: 'sweetness', label: '단맛' },
+    { key: 'sourness', label: '신맛' },
+    { key: 'bitterness', label: '쓴맛' },
+    { key: 'saltiness', label: '짠맛' },
+    { key: 'umami', label: '감칠맛' },
+]
+
+export default function FruitMatchValidate() {
     const [fruits, setFruits] = useState<Fruit[]>([])
     const [fruitA, setFruitA] = useState('')
     const [fruitB, setFruitB] = useState('')
-    const [result, setResult] = useState<PairingResult | null>(null)
+    const [pairingResult, setPairingResult] = useState<PairingResult | null>(null)
+    const [form, setForm] = useState<ValidationForm>(defaultForm)
     const [loading, setLoading] = useState(false)
-    const [ratioA, setRatioA] = useState(50)
+    const [showPopup, setShowPopup] = useState(false)
 
     useEffect(() => {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/fruits/`)
@@ -46,156 +72,242 @@ export default function Home() {
     const handlePairing = async () => {
         if (!fruitA || !fruitB) return
         setLoading(true)
+        setPairingResult(null)
+        setForm({ ...defaultForm, tester_name: form.tester_name })
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/fruits/pairing`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fruit_a_id: fruitA,
-                fruit_b_id: fruitB,
-                ratio_a: ratioA / 100,
-                ratio_b: (100 - ratioA) / 100
-            })
+            body: JSON.stringify({ fruit_a_id: fruitA, fruit_b_id: fruitB })
         })
         const data = await res.json()
-        setResult(data)
+        setPairingResult(data)
         setLoading(false)
     }
 
+    const handleSave = async () => {
+        if (!pairingResult || !form.result) return
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/validations/fruitmatch/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                combination_id: pairingResult.id,
+                ...form
+            })
+        })
+        setShowPopup(true)
+    }
+
+    const handleConfirm = () => {
+        setShowPopup(false)
+        setFruitB('')
+        setPairingResult(null)
+        setForm({ ...defaultForm, tester_name: form.tester_name })
+    }
+
+    const handleScore = (key: string, value: number) => {
+        setForm(prev => ({ ...prev, [key]: value }))
+    }
+
+    const fruitAName = fruits.find(f => f.id === fruitA)?.name_ko || fruits.find(f => f.id === fruitA)?.name_en
+    const fruitBName = fruits.find(f => f.id === fruitB)?.name_ko || fruits.find(f => f.id === fruitB)?.name_en
+
     return (
-        <main className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-8">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold text-pink-400 mb-2">🍓 Dessert AI Lab</h1>
-                <p className="text-pink-300 text-lg">과일 페어링 AI 서비스</p>
-            </div>
+        <main className="min-h-screen bg-pink-50 p-8">
+            <div className="max-w-2xl mx-auto">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold text-pink-400 mb-2">🍓 과일 페어링 검증</h1>
+                    <p className="text-pink-300">연구원 전용 맛 검증 입력 폼</p>
+                </div>
 
-            <div className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-lg border border-pink-100">
-                <h2 className="text-xl font-semibold text-pink-400 mb-6 text-center">🎀 과일 조합 만들기</h2>
-
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <label className="text-sm text-pink-300 mb-1 block">과일 A</label>
-                        <select
-                            className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
-                            value={fruitA}
-                            onChange={e => { setFruitA(e.target.value); setResult(null) }}
-                        >
-                            <option value="">과일을 선택하세요</option>
-                            {fruits.map(f => (
-                                <option key={f.id} value={f.id}>
-                                    {f.name_ko ? `${f.name_ko} (${f.name_en})` : f.name_en}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="text-center text-pink-300 text-2xl">+</div>
+                <div className="bg-white rounded-3xl shadow-lg p-8 border border-pink-100 flex flex-col gap-6">
 
                     <div>
-                        <label className="text-sm text-pink-300 mb-1 block">과일 B</label>
-                        <select
+                        <label className="text-sm text-pink-300 mb-1 block">테스터 이름</label>
+                        <input
+                            type="text"
                             className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
-                            value={fruitB}
-                            onChange={e => { setFruitB(e.target.value); setResult(null) }}
-                        >
-                            <option value="">과일을 선택하세요</option>
-                            {fruits.map(f => (
-                                <option key={f.id} value={f.id}>
-                                    {f.name_ko ? `${f.name_ko} (${f.name_en})` : f.name_en}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder="이름을 입력하세요"
+                            value={form.tester_name}
+                            onChange={e => setForm(prev => ({ ...prev, tester_name: e.target.value }))}
+                        />
                     </div>
 
-                    {fruitA && fruitB && (
-                        <div className="bg-white rounded-2xl p-4 border border-pink-100">
-                            <p className="text-sm text-pink-300 mb-2">혼합 비율</p>
-                            <div className="flex items-center gap-3">
-                <span className="text-xs text-pink-400 w-20 text-right truncate">
-                  {fruits.find(f => f.id === fruitA)?.name_ko || fruits.find(f => f.id === fruitA)?.name_en}
-                </span>
-                                <span className="text-xs font-bold text-pink-400 w-8 text-center">{ratioA}%</span>
-                                <input
-                                    type="range"
-                                    min="10"
-                                    max="90"
-                                    value={ratioA}
-                                    onChange={e => setRatioA(Number(e.target.value))}
-                                    className="flex-1 accent-pink-400"
-                                />
-                                <span className="text-xs font-bold text-pink-400 w-8 text-center">{100 - ratioA}%</span>
-                                <span className="text-xs text-pink-400 w-20 truncate">
-                  {fruits.find(f => f.id === fruitB)?.name_ko || fruits.find(f => f.id === fruitB)?.name_en}
-                </span>
-                            </div>
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <label className="text-sm text-pink-300 mb-1 block">과일 A</label>
+                            <select
+                                className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                                value={fruitA}
+                                onChange={e => { setFruitA(e.target.value); setPairingResult(null) }}
+                            >
+                                <option value="">과일을 선택하세요</option>
+                                {fruits.map(f => (
+                                    <option key={f.id} value={f.id}>
+                                        {f.name_ko ? `${f.name_ko} (${f.name_en})` : f.name_en}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    )}
+
+                        <div className="text-center text-pink-300 text-2xl">+</div>
+
+                        <div>
+                            <label className="text-sm text-pink-300 mb-1 block">과일 B</label>
+                            <select
+                                className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                                value={fruitB}
+                                onChange={e => { setFruitB(e.target.value); setPairingResult(null) }}
+                            >
+                                <option value="">과일을 선택하세요</option>
+                                {fruits.map(f => (
+                                    <option key={f.id} value={f.id}>
+                                        {f.name_ko ? `${f.name_ko} (${f.name_en})` : f.name_en}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
 
                     <button
                         onClick={handlePairing}
                         disabled={loading || !fruitA || !fruitB}
-                        className="mt-4 bg-pink-400 hover:bg-pink-500 text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50"
+                        className="bg-pink-400 hover:bg-pink-500 text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50"
                     >
                         {loading ? '분석 중...' : '🍰 페어링 분석하기'}
                     </button>
-                </div>
 
-                {result && (
-                    <div className="mt-8 bg-pink-50 rounded-2xl p-6 border border-pink-100">
-                        <h3 className="text-center text-pink-400 font-semibold mb-4">✨ 페어링 결과</h3>
+                    {pairingResult && (
+                        <>
+                            <div className="bg-pink-50 rounded-2xl p-6 border border-pink-100">
+                                <h3 className="text-center text-pink-400 font-semibold mb-4">
+                                    ✨ {fruitAName} + {fruitBName}
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                                        <p className="text-xs text-pink-300 mb-1">궁합 점수</p>
+                                        <p className="text-2xl font-bold text-pink-400">{pairingResult.compound_score}점</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                                        <p className="text-xs text-pink-300 mb-1">공유 화합물</p>
+                                        <p className="text-2xl font-bold text-pink-400">{pairingResult.shared_compounds}개</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                                        <p className="text-xs text-pink-300 mb-1">예측 당도</p>
+                                        <p className="text-2xl font-bold text-pink-400">
+                                            {pairingResult.predicted_sugar ? `${pairingResult.predicted_sugar}g` : '-'}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
+                                        <p className="text-xs text-pink-300 mb-1">예측 산도</p>
+                                        <p className="text-2xl font-bold text-pink-400">
+                                            {pairingResult.predicted_ph ? `pH ${pairingResult.predicted_ph}` : '-'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
-                                <p className="text-xs text-pink-300 mb-1">궁합 점수</p>
-                                <p className="text-2xl font-bold text-pink-400">{result.compound_score}점</p>
-                            </div>
-                            <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
-                                <p className="text-xs text-pink-300 mb-1">공유 화합물</p>
-                                <p className="text-2xl font-bold text-pink-400">{result.shared_compounds}개</p>
-                            </div>
-                            <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
-                                <p className="text-xs text-pink-300 mb-1">예측 당도</p>
-                                <p className="text-2xl font-bold text-pink-400">
-                                    {result.predicted_sugar ? `${result.predicted_sugar}g` : '-'}
-                                </p>
-                            </div>
-                            <div className="bg-white rounded-2xl p-4 text-center border border-pink-100">
-                                <p className="text-xs text-pink-300 mb-1">예측 산도</p>
-                                <p className="text-2xl font-bold text-pink-400">
-                                    {result.predicted_ph ? `pH ${result.predicted_ph}` : '-'}
-                                </p>
-                            </div>
-                        </div>
-
-                        {result.predicted_sweetness && (
-                            <div className="bg-white rounded-2xl p-4 border border-pink-100">
-                                <p className="text-sm text-pink-400 font-semibold mb-3">맛 프로파일 (1~10)</p>
-                                <div className="flex flex-col gap-2">
-                                    {[
-                                        { label: '단맛', val: result.predicted_sweetness },
-                                        { label: '산미', val: result.predicted_acidity },
-                                        { label: '쓴맛', val: result.predicted_bitterness },
-                                        { label: '크리미함', val: result.predicted_creaminess },
-                                        { label: '과즙감', val: result.predicted_juiciness },
-                                        { label: '풍미', val: result.predicted_richness },
-                                        { label: '상큼함', val: result.predicted_freshness },
-                                    ].map(item => (
-                                        <div key={item.label} className="flex items-center gap-3">
-                                            <span className="text-xs text-pink-300 w-16">{item.label}</span>
-                                            <div className="flex-1 bg-pink-50 rounded-full h-2">
-                                                <div
-                                                    className="bg-pink-400 h-2 rounded-full transition-all"
-                                                    style={{ width: `${((item.val || 0) / 10) * 100}%` }}
-                                                />
+                            <div>
+                                <p className="text-sm text-pink-300 mb-3">맛 강도 (1~5점)</p>
+                                <div className="flex flex-col gap-3">
+                                    {flavorItems.map(item => (
+                                        <div key={item.key} className="flex items-center justify-between">
+                                            <span className="text-gray-600 w-16">{item.label}</span>
+                                            <div className="flex gap-2">
+                                                {[1, 2, 3, 4, 5].map(score => (
+                                                    <button
+                                                        key={score}
+                                                        onClick={() => handleScore(item.key, score)}
+                                                        className={`w-9 h-9 rounded-full text-sm font-semibold transition-colors
+                              ${form[item.key as keyof ValidationForm] === score
+                                                            ? 'bg-pink-400 text-white'
+                                                            : 'bg-pink-50 text-pink-300 border border-pink-200 hover:bg-pink-100'
+                                                        }`}
+                                                    >
+                                                        {score}
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <span className="text-xs text-pink-400 w-6 text-right">{item.val}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        )}
-                    </div>
-                )}
+
+                            <div>
+                                <p className="text-sm text-pink-300 mb-3">전체 밸런스 점수 (1~5점)</p>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map(score => (
+                                        <button
+                                            key={score}
+                                            onClick={() => handleScore('balance_score', score)}
+                                            className={`w-9 h-9 rounded-full text-sm font-semibold transition-colors
+                        ${form.balance_score === score
+                                                ? 'bg-pink-400 text-white'
+                                                : 'bg-pink-50 text-pink-300 border border-pink-200 hover:bg-pink-100'
+                                            }`}
+                                        >
+                                            {score}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-pink-300 mb-3">최종 평가</p>
+                                <div className="flex gap-3">
+                                    {['성공', '개선필요', '실패'].map(r => (
+                                        <button
+                                            key={r}
+                                            onClick={() => setForm(prev => ({ ...prev, result: r }))}
+                                            className={`flex-1 py-2 rounded-2xl text-sm font-semibold transition-colors
+                        ${form.result === r
+                                                ? 'bg-pink-400 text-white'
+                                                : 'bg-pink-50 text-pink-300 border border-pink-200 hover:bg-pink-100'
+                                            }`}
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm text-pink-300 mb-1 block">메모 (선택)</label>
+                                <textarea
+                                    className="w-full border border-pink-200 rounded-2xl px-4 py-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none"
+                                    rows={3}
+                                    placeholder="추가 의견을 입력하세요"
+                                    value={form.memo}
+                                    onChange={e => setForm(prev => ({ ...prev, memo: e.target.value }))}
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleSave}
+                                disabled={!form.result}
+                                className="bg-pink-400 hover:bg-pink-500 text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50"
+                            >
+                                저장하기
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
+
+            {showPopup && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+                    <div className="bg-white rounded-3xl px-8 py-6 shadow-xl border border-pink-100 text-center">
+                        <p className="text-2xl mb-2">🎀</p>
+                        <h3 className="text-lg font-bold text-pink-400 mb-1">저장되었습니다!</h3>
+                        <p className="text-pink-300 text-sm mb-4">{fruitAName} + {fruitBName} 검증 결과가 저장됐어요.</p>
+                        <button
+                            onClick={handleConfirm}
+                            className="bg-pink-400 hover:bg-pink-500 text-white font-semibold py-2 px-8 rounded-2xl transition-colors"
+                        >
+                            확인
+                        </button>
+                    </div>
+                </div>
+            )}
         </main>
     )
 }
