@@ -13,7 +13,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://renovator-rubber-pony.ngrok-free.dev"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://front-production-5bf5.up.railway.app",
+        "https://renovator-rubber-pony.ngrok-free.dev",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
