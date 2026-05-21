@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 
-/*레일*/
 const nextConfig: NextConfig = {
     allowedDevOrigins: ['renovator-rubber-pony.ngrok-free.dev'],
     async rewrites() {
