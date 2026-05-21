@@ -20,4 +20,4 @@ def get_fruit(fruit_id: str, db: Session = Depends(get_db)):
 
 @router.post("/pairing", response_model=PairingResponse)
 def calculate_pairing(request: PairingRequest, db: Session = Depends(get_db)):
-    return service.calculate_pairing(db, request.fruit_a_id, request.fruit_b_id)
+    return service.calculate_pairing(db, request.fruit_a_id, request.fruit_b_id, request.ratio_a, request.ratio_b)

@@ -18,6 +18,8 @@ class FruitResponse(BaseModel):
 class PairingRequest(BaseModel):
     fruit_a_id: str
     fruit_b_id: str
+    ratio_a: float = 0.5
+    ratio_b: float = 0.5
 
 class PairingResponse(BaseModel):
     id: uuid.UUID

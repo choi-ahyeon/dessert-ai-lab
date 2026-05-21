@@ -59,7 +59,7 @@ def predict_mix(fruit_a: Fruit, fruit_b: Fruit, ratio_a: float = 0.5, ratio_b: f
         "predicted_freshness": predicted_freshness,
     }
 
-def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
+def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str, ratio_a: float = 0.5, ratio_b: float = 0.5):
 
     compounds_a = db.query(FruitCompound).filter(
         FruitCompound.fruit_id == fruit_a_id
@@ -68,6 +68,7 @@ def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
     compounds_b = db.query(FruitCompound).filter(
         FruitCompound.fruit_id == fruit_b_id
     ).all()
+
     fruit_a = db.query(Fruit).filter(Fruit.id == fruit_a_id).first()
     fruit_b = db.query(Fruit).filter(Fruit.id == fruit_b_id).first()
 
@@ -80,7 +81,7 @@ def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
     else:
         score = round(len(shared) / min(len(ids_a), len(ids_b)) * 100, 2)
 
-    mix = predict_mix(fruit_a, fruit_b)
+    mix = predict_mix(fruit_a, fruit_b, ratio_a, ratio_b)
 
     combination = Combination(
         id=uuid.uuid4(),
@@ -97,8 +98,8 @@ def calculate_pairing(db: Session, fruit_a_id: str, fruit_b_id: str):
         predicted_juiciness=mix["predicted_juiciness"],
         predicted_richness=mix["predicted_richness"],
         predicted_freshness=mix["predicted_freshness"],
-        ratio_a=0.5,
-        ratio_b=0.5,
+        ratio_a=ratio_a,
+        ratio_b=ratio_b,
         created_at=datetime.now(timezone.utc)
     )
     db.add(combination)
