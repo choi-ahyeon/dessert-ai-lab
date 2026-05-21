@@ -43,6 +43,12 @@ export default function Home() {
         })
   }, [])
 
+  useEffect(() => {
+    if (fruitA && fruitB && result) {
+      handlePairing()
+    }
+  }, [ratioA])
+
   const handlePairing = async () => {
     if (!fruitA || !fruitB) return
     setLoading(true)
