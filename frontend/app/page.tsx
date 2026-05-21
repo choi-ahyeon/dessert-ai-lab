@@ -24,7 +24,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('http://localhost:8000/fruits/')
+    fetch('${process.env.NEXT_PUBLIC_API_URL}/fruits/')
         .then(res => res.json())
         .then(data => {
           const sorted = data.sort((a: Fruit, b: Fruit) =>
@@ -37,7 +37,7 @@ export default function Home() {
   const handlePairing = async () => {
     if (!fruitA || !fruitB) return
     setLoading(true)
-    const res = await fetch('http://localhost:8000/fruits/pairing', {
+    const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/fruits/pairing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fruit_a_id: fruitA, fruit_b_id: fruitB })
