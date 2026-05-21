@@ -47,7 +47,7 @@ export default function Home() {
     if (fruitA && fruitB && result) {
       handlePairing()
     }
-  }, [ratioA])
+  }, [ratioA, fruitA, fruitB])
 
   const handlePairing = async () => {
     if (!fruitA || !fruitB) return
