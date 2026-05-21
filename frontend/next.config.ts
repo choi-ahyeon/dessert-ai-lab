@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
         return [
             {
                 source: '/api/:path*',
-                destination: 'http://localhost:8000/:path*',
+                destination: 'https://dessert-ai-lab-production.up.railway.app/:path*',
             },
         ]
     },
