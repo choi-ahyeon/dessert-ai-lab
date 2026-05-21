@@ -15,8 +15,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://front-production-5bf5.up.railway.app",
         "https://renovator-rubber-pony.ngrok-free.dev",
+        "https://dessertlab-production.up.railway.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
