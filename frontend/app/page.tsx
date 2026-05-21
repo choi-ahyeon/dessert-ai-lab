@@ -33,16 +33,15 @@ export default function Home() {
   const [ratioA, setRatioA] = useState(50)
 
   useEffect(() => {
-    if (fruitA && fruitB && result) {
-      handlePairing()
-    }
-  }, [ratioA])
-
-  useEffect(() => {
-    if (fruitA && fruitB && result) {
-      handlePairing()
-    }
-  }, [ratioA, fruitA, fruitB])
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/fruits/`)
+        .then(res => res.json())
+        .then(data => {
+          const sorted = data.sort((a: Fruit, b: Fruit) =>
+              a.name_en.localeCompare(b.name_en)
+          )
+          setFruits(sorted)
+        })
+  }, [])
 
   const handlePairing = useCallback(async () => {
     if (!fruitA || !fruitB) return
@@ -61,6 +60,12 @@ export default function Home() {
     setResult(data)
     setLoading(false)
   }, [fruitA, fruitB, ratioA])
+
+  useEffect(() => {
+    if (fruitA && fruitB && result) {
+      handlePairing()
+    }
+  }, [ratioA])
 
   return (
       <main className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-8">
