@@ -5,10 +5,6 @@ from app import models
 from app.domain.fruits.router import router as fruits_router
 from app.domain.validations.fruitmatch.router import router as validations_fruitmatch_router
 
-@app.get("/")
-def root():
-    return {"status": "ok"}
-
 app = FastAPI(
     title="Dessert AI Lab",
     description="과일 페어링 AI 서비스",
