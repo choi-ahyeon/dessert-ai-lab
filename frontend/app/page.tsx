@@ -33,7 +33,7 @@ export default function Home() {
   const [ratioA, setRatioA] = useState(50)
 
   useEffect(() => {
-    fetch('/api/fruits/')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/fruits/`)
         .then(res => res.json())
         .then(data => {
           const sorted = data.sort((a: Fruit, b: Fruit) =>
@@ -46,7 +46,7 @@ export default function Home() {
   const handlePairing = async () => {
     if (!fruitA || !fruitB) return
     setLoading(true)
-    const res = await fetch('/api/fruits/pairing', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/fruits/pairing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
